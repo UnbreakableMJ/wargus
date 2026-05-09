@@ -59,14 +59,16 @@ CreateUnit("unit-catapult", 1, {22, 15})
 CreateUnit("unit-town-hall", 2, {2, 4})
 CreateUnit("unit-great-hall", 3, {25, 4})
 
-local mine = CreateUnit("unit-gold-mine", 15, {14, 5})
-SetResourcesHeld(mine, 300)
+local shared_mine = CreateUnit("unit-gold-mine", 15, {14, 5})
+SetResourcesHeld(shared_mine, 300)
 CreateUnit("unit-peasant", 2, {9, 6})
 CreateUnit("unit-peasant", 2, {9, 7})
 CreateUnit("unit-peasant", 2, {9, 8})
+CreateUnit("unit-peasant", 2, {10, 9})
 CreateUnit("unit-peon", 3, {22, 6})
 CreateUnit("unit-peon", 3, {22, 7})
 CreateUnit("unit-peon", 3, {22, 8})
+CreateUnit("unit-peon", 3, {21, 9})
 
 local human_mine = CreateUnit("unit-gold-mine", 15, {7, 10})
 SetResourcesHeld(human_mine, 200)
@@ -94,6 +96,17 @@ AddTrigger(
     OrderUnit(1, "unit-grunt", {17, 12, 20, 18}, {11, 13, 13, 17}, "attack")
     OrderUnit(1, "unit-axethrower", {17, 12, 20, 18}, {11, 13, 13, 17}, "attack")
     OrderUnit(1, "unit-catapult", {21, 14, 23, 16}, {8, 14, 12, 16}, "attack")
+    OrderUnit(2, "unit-peasant", {8, 5, 10, 8}, {14, 5, 16, 7}, "resource")
+    OrderUnit(3, "unit-peon", {21, 5, 23, 8}, {14, 5, 16, 7}, "resource")
+    return true
+  end)
+
+AddTrigger(
+  function() return GameCycle == 90 end,
+  function()
+    print("PYTEST_SYNC_STRESS_BLOCKER_BUILD_ORDERS")
+    OrderUnit(2, "unit-peasant", {10, 9}, {11, 7}, "build", "unit-farm")
+    OrderUnit(3, "unit-peon", {21, 9}, {19, 7}, "build", "unit-pig-farm")
     return true
   end)
 
@@ -105,6 +118,13 @@ AddTrigger(
     CreateUnit("unit-ogre", 1, {17, 17})
     OrderUnit(0, "unit-knight", {13, 13}, {17, 17}, "attack")
     OrderUnit(1, "unit-ogre", {17, 17}, {13, 13}, "attack")
+    return true
+  end)
+
+AddTrigger(
+  function() return GameCycle > 100 and GetUnitVariable(shared_mine, "ResourcesHeld") <= 0 end,
+  function()
+    print("PYTEST_SYNC_STRESS_GOLD_EXHAUSTED")
     return true
   end)
 
