@@ -222,17 +222,23 @@ function RunJoinIpMenu()
   end
   ServerListUpdate()
   menu:addFullButton(_("Co~!nnect"), "n", 60, 180, function()
-      local selectedserver = servers[serverlist:getSelected() + 1]
-      if selectedserver then
-         local ip = string.match(selectedserver, "[0-9\.]+")
-         print("Joining " .. ip)
-         NetworkDiscoverServers(false)
-         NetworkSetupServerAddress(ip)
-         NetworkInitClientConnect()
-         if (RunJoiningGameMenu() ~= 0) then
-            -- connect failed, don't leave this menu
-            return
-         end
+      local selected = serverlist:getSelected()
+      local selectedserver = selected ~= nil and servers[selected + 1] or nil
+      local ip = selectedserver and string.match(selectedserver, "[0-9%.]+") or nil
+      if ip == nil then
+         ErrorMenu(_("No server selected"))
+         return
+      end
+      print("Joining " .. ip)
+      NetworkDiscoverServers(false)
+      if (NetworkSetupServerAddress(ip) ~= 0) then
+         ErrorMenu(_("Invalid server name"))
+         return
+      end
+      NetworkInitClientConnect()
+      if (RunJoiningGameMenu() ~= 0) then
+         -- connect failed, don't leave this menu
+         return
       end
     end)
   menu:addFullButton(_("~!Add server"), "a", 60, 210, function() RunAddServerMenu(); ServerListUpdate() end)
@@ -527,7 +533,7 @@ function CreateOnlineLobby(map, numplayers, isserver)
                 ServerSetupState.Race[0] = dd:getSelected() - 1
                 NetworkServerResyncClients()
               else
-                LocalSetupState.Race[Hosts[NetLocalHostsSlot].PlyNr] = race:getSelected() - 1
+                LocalSetupState.Race[Hosts[NetLocalHostsSlot].PlyNr] = dd:getSelected() - 1
               end
             end):id("option_race"):withWidth(120),
           }),
