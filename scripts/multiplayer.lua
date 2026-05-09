@@ -11,6 +11,7 @@ local function usage()
   print("\t[online] -- only valid for server, tries to advertise the server on the default metaserver")
   print("\t[numplayers=[number of connections to wait for before game starts]]")
   print("\t[ip=server-ip] -- only valid for client")
+  print("\t[port=server-port] -- only valid for client")
   print("\t[race=(orc|human)]")
   print("\t[map=[map.smp]] -- only valid for server")
   print("\t[player=[nickname]]")
@@ -40,6 +41,7 @@ else
     return
   end
   local ip = string.match(ARGS,"ip=([^,]+)")
+  local port = tonumber(string.match(ARGS,"port=([^,]+)"))
   local racename = string.match(ARGS,"race=([^,]+)") or "default"
   local resources= string.match(ARGS,"resources=([^,]+)") or "default"
   local units = string.match(ARGS,"units=([^,]+)") or "default"
@@ -134,7 +136,7 @@ else
     CustomStartup = function()
       InitGameSettings()
       InitNetwork1()
-      NetworkSetupServerAddress(ip)
+      NetworkSetupServerAddress(ip, port or 0)
       NetworkInitClientConnect()
       RunJoiningGameMenu(racename, true)
     end

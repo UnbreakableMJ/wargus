@@ -687,8 +687,8 @@ function RunServerMultiGameMenu(map, description, numplayers, options)
         menu.option_units.callback(menu.option_units)
         optUnits= ""
       elseif (options.fow == 0) then
-        menu.option_fow:setMarked(options.fow)
-        menu.option_fow.callback(options.fow)
+        menu.option_fow:setMarked(false)
+        menu.option_fow.callback(menu.option_fow)
         options.fow = -1
       elseif options.revealmap and options.revealmap ~= -1 then
         menu.option_terrain:setSelected(options.revealmap)
