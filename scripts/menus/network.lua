@@ -327,6 +327,10 @@ function CreateOnlineLobby(map, numplayers, isserver)
   local playerTable = {HBox({ _("Players") }),}
   local playerNames = {"", "AI"}
 
+  local function serverHostPlayerSlot()
+    return Hosts[0].PlyNr
+  end
+
   local function updatePlayerNamesFromHosts()
     local changed = false
     for i=0,PlayerMax-1 do
@@ -530,7 +534,7 @@ function CreateOnlineLobby(map, numplayers, isserver)
             LLabel(_("~<Your Race:~>"), "game"),
             LDropDown({_("Map Default"), _("Human"), _("Orc")}, function(dd)
               if isserver then
-                ServerSetupState.Race[0] = dd:getSelected() - 1
+                ServerSetupState.Race[serverHostPlayerSlot()] = dd:getSelected() - 1
                 NetworkServerResyncClients()
               else
                 LocalSetupState.Race[Hosts[NetLocalHostsSlot].PlyNr] = dd:getSelected() - 1
@@ -552,12 +556,13 @@ function CreateOnlineLobby(map, numplayers, isserver)
             end):id("option_resources"):withWidth(120),
           }),
           LCheckBox(_("Dedicated AI Server:"), function (dd)
+            local hostSlot = serverHostPlayerSlot()
             if dd:isMarked() then
               -- 2 == closed
-              ServerSetupState.CompOpt[0] = 2
+              ServerSetupState.CompOpt[hostSlot] = 2
             else
               -- 0 == available
-              ServerSetupState.CompOpt[0] = 0
+              ServerSetupState.CompOpt[hostSlot] = 0
             end
             NetworkServerResyncClients()
           end):id("option_dedicated_ai_server"),
@@ -622,7 +627,7 @@ function CreateOnlineLobby(map, numplayers, isserver)
     self.option_terrain:setSelected(ServerSetupState.RevealMap)
     self.option_units:setSelected(ServerSetupState.UnitsOption + 1)
     self.option_resources:setSelected(ServerSetupState.ResourcesOption + 1)
-    self.option_dedicated_ai_server:setMarked(ServerSetupState.CompOpt[0] == 2) -- host is closed
+    self.option_dedicated_ai_server:setMarked(ServerSetupState.CompOpt[serverHostPlayerSlot()] == 2) -- host is closed
     updatePlayerListFromHosts()
   end
 
