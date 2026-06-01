@@ -222,17 +222,23 @@ function RunJoinIpMenu()
   end
   ServerListUpdate()
   menu:addFullButton(_("Co~!nnect"), "n", 60, 180, function()
-      local selectedserver = servers[serverlist:getSelected() + 1]
-      if selectedserver then
-         local ip = string.match(selectedserver, "[0-9\.]+")
-         print("Joining " .. ip)
-         NetworkDiscoverServers(false)
-         NetworkSetupServerAddress(ip)
-         NetworkInitClientConnect()
-         if (RunJoiningGameMenu() ~= 0) then
-            -- connect failed, don't leave this menu
-            return
-         end
+      local selected = serverlist:getSelected()
+      local selectedserver = selected ~= nil and servers[selected + 1] or nil
+      local ip = selectedserver and string.match(selectedserver, "[0-9%.]+") or nil
+      if ip == nil then
+         ErrorMenu(_("No server selected"))
+         return
+      end
+      print("Joining " .. ip)
+      NetworkDiscoverServers(false)
+      if (NetworkSetupServerAddress(ip) ~= 0) then
+         ErrorMenu(_("Invalid server name"))
+         return
+      end
+      NetworkInitClientConnect()
+      if (RunJoiningGameMenu() ~= 0) then
+         -- connect failed, don't leave this menu
+         return
       end
     end)
   menu:addFullButton(_("~!Add server"), "a", 60, 210, function() RunAddServerMenu(); ServerListUpdate() end)
@@ -320,6 +326,10 @@ function CreateOnlineLobby(map, numplayers, isserver)
   local menu
   local playerTable = {HBox({ _("Players") }),}
   local playerNames = {"", "AI"}
+
+  local function serverHostPlayerSlot()
+    return Hosts[0].PlyNr
+  end
 
   local function updatePlayerNamesFromHosts()
     local changed = false
@@ -524,10 +534,10 @@ function CreateOnlineLobby(map, numplayers, isserver)
             LLabel(_("~<Your Race:~>"), "game"),
             LDropDown({_("Map Default"), _("Human"), _("Orc")}, function(dd)
               if isserver then
-                ServerSetupState.Race[0] = dd:getSelected() - 1
+                ServerSetupState.Race[serverHostPlayerSlot()] = dd:getSelected() - 1
                 NetworkServerResyncClients()
               else
-                LocalSetupState.Race[Hosts[NetLocalHostsSlot].PlyNr] = race:getSelected() - 1
+                LocalSetupState.Race[Hosts[NetLocalHostsSlot].PlyNr] = dd:getSelected() - 1
               end
             end):id("option_race"):withWidth(120),
           }),
@@ -546,12 +556,13 @@ function CreateOnlineLobby(map, numplayers, isserver)
             end):id("option_resources"):withWidth(120),
           }),
           LCheckBox(_("Dedicated AI Server:"), function (dd)
+            local hostSlot = serverHostPlayerSlot()
             if dd:isMarked() then
               -- 2 == closed
-              ServerSetupState.CompOpt[0] = 2
+              ServerSetupState.CompOpt[hostSlot] = 2
             else
               -- 0 == available
-              ServerSetupState.CompOpt[0] = 0
+              ServerSetupState.CompOpt[hostSlot] = 0
             end
             NetworkServerResyncClients()
           end):id("option_dedicated_ai_server"),
@@ -616,7 +627,7 @@ function CreateOnlineLobby(map, numplayers, isserver)
     self.option_terrain:setSelected(ServerSetupState.RevealMap)
     self.option_units:setSelected(ServerSetupState.UnitsOption + 1)
     self.option_resources:setSelected(ServerSetupState.ResourcesOption + 1)
-    self.option_dedicated_ai_server:setMarked(ServerSetupState.CompOpt[0] == 2) -- host is closed
+    self.option_dedicated_ai_server:setMarked(ServerSetupState.CompOpt[serverHostPlayerSlot()] == 2) -- host is closed
     updatePlayerListFromHosts()
   end
 
@@ -681,8 +692,8 @@ function RunServerMultiGameMenu(map, description, numplayers, options)
         menu.option_units.callback(menu.option_units)
         optUnits= ""
       elseif (options.fow == 0) then
-        menu.option_fow:setMarked(options.fow)
-        menu.option_fow.callback(options.fow)
+        menu.option_fow:setMarked(false)
+        menu.option_fow.callback(menu.option_fow)
         options.fow = -1
       elseif options.revealmap and options.revealmap ~= -1 then
         menu.option_terrain:setSelected(options.revealmap)
